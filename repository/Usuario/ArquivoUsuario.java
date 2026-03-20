@@ -21,22 +21,31 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
     @Override
     public int create(Usuario u) throws Exception {
         int id = super.create(u);
-        indiceIndiretoEMAIL.create(new ParEMAILID(u.getEmail(), id));
+        indiceIndiretoEMAIL.create(new ParEMAILID(id, u.getEmail()));
         return id;
     }
 
+    public Usuario buscarPorEmail(String email) {
+        try {
+            return read(email.hashCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public Usuario read(String email) throws Exception {
-        ParEMAILID pei = indiceIndiretoEMAIL.read(ParEMAILID.hash(email));
+        ParEMAILID pei = indiceIndiretoEMAIL.read(email.hashCode());
         if(pei == null)
             return null;
         return read(pei.getId());
     }
     
     public boolean delete(String email) throws Exception {
-        ParEMAILID pei = indiceIndiretoEMAIL.read(ParEMAILID.hash(email));
+        ParEMAILID pei = indiceIndiretoEMAIL.read(email.hashCode());
         if(pei != null) 
             if(delete(pei.getId())) 
-                return indiceIndiretoEMAIL.delete(ParEMAILID.hash(email));
+                return indiceIndiretoEMAIL.delete(email.hashCode());
         return false;
     }
 
@@ -45,7 +54,7 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
         Usuario u = super.read(id);
         if(u != null) {
             if(super.delete(id))
-                return indiceIndiretoEMAIL.delete(ParEMAILID.hash(u.getEmail()));
+                return indiceIndiretoEMAIL.delete(u.getEmail().hashCode());
         }
         return false;
     }
@@ -55,8 +64,8 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
         Usuario usuarioVelho = read(novoUsuario.getEmail());
         if(super.update(novoUsuario)) {
             if(novoUsuario.getEmail().compareTo(usuarioVelho.getEmail())!=0) {
-                indiceIndiretoEMAIL.delete(ParEMAILID.hash(usuarioVelho.getEmail()));
-                indiceIndiretoEMAIL.create(new ParEMAILID(novoUsuario.getEmail(), novoUsuario.getId()));
+                indiceIndiretoEMAIL.delete(usuarioVelho.getEmail().hashCode());
+                indiceIndiretoEMAIL.create(new ParEMAILID(novoUsuario.getId(), novoUsuario.getEmail()));
             }
             return true;
         }

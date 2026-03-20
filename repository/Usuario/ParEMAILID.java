@@ -7,18 +7,22 @@ import java.io.IOException;
 
 public class ParEMAILID implements repository.RegistroHashExtensivel<ParEMAILID> {
     
-    private String email; // chave
     private int id;     // valor
+    private String email; // chave
     private final short TAMANHO = 30;  // tamanho em bytes
 
     public ParEMAILID() {
-        this.email = "";
         this.id = -1;
+        this.email = "";
     }
 
-    public ParEMAILID(String email, int id) throws Exception {
-        this.email = email;
+    public static ParEMAILID criar(int id, String email){
+        return new ParEMAILID(id, email);
+    }
+
+    public ParEMAILID(int id, String email) {
         this.id = id;
+        this.email = email;
     }
 
     public String getEmail() {
@@ -32,34 +36,28 @@ public class ParEMAILID implements repository.RegistroHashExtensivel<ParEMAILID>
  
     @Override
     public int hashCode() {
-        return Math.abs(this.email.hashCode());
+        return this.email.hashCode();
     }
 
-    public static int hash(String email) {
-        return Math.abs(email.hashCode());
-    }
 
     public short size() {
         return this.TAMANHO;
     }
 
-    public String toString() {
-        return "("+this.email + ";" + this.id+")";
-    }
 
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeUTF(this.email);
         dos.writeInt(this.id);
+        dos.writeUTF(this.email);
         return baos.toByteArray();
     }
 
     public void fromByteArray(byte[] ba) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(ba);
         DataInputStream dis = new DataInputStream(bais);
-        this.email = dis.readUTF();
         this.id = dis.readInt();
+        this.email = dis.readUTF();
     }
 
     
