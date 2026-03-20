@@ -1,6 +1,8 @@
 package model;
-import aed3.Registro;
 import java.io.IOException;
+
+import repository.Registro;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.ByteArrayInputStream;
@@ -10,23 +12,25 @@ public class Usuario implements Registro {
 
     public int id;
     public String nome;
+    public String email;
     public String hashSenha;
     public String PerguntaSecreta;
     public String RespostaSecreta;
 
     public Usuario() {
-        this(-1, "", "", "", "");
+        this(-1, "", "", "", "", "");
     }
 
-    public Usuario(int i, String n, String h, String p, String r) {
+    public Usuario(int i, String n, String e, String h, String p, String r) {
         this.id = i;
         this.nome = n;
+        this.email = e;
         this.hashSenha = h;
         this.PerguntaSecreta = p;
         this.RespostaSecreta = r;
     }
-    public Usuario(String n, String h, String p, String r) {
-        this(-1, n, h, p, r);
+    public Usuario(String n, String e, String h, String p, String r) {
+        this(-1, n, e, h, p, r);
     }
 
 
@@ -36,6 +40,10 @@ public class Usuario implements Registro {
 
     public int getId() {
         return id;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public String getHashSenha() {
@@ -53,6 +61,7 @@ public class Usuario implements Registro {
     public String toString() {
         return "\nID........: " + this.id +
                "\nNome......: " + this.nome +
+               "\nEmail: " + this.email +
                "\nHash Senha: " + this.hashSenha +
                "\nPergunta Secreta: " + this.PerguntaSecreta +
                "\nResposta Secreta: " + this.RespostaSecreta;
@@ -63,6 +72,7 @@ public class Usuario implements Registro {
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeInt(this.id);
         dos.writeUTF(this.nome);
+        dos.writeUTF(this.email);
         dos.writeUTF(this.hashSenha);
         dos.writeUTF(this.PerguntaSecreta);
         dos.writeUTF(this.RespostaSecreta);
@@ -75,6 +85,7 @@ public class Usuario implements Registro {
         DataInputStream dis = new DataInputStream(bais);
         this.id = dis.readInt();
         this.nome = dis.readUTF();
+        this.email = dis.readUTF();
         this.hashSenha = dis.readUTF();
         this.PerguntaSecreta = dis.readUTF();
         this.RespostaSecreta = dis.readUTF();
