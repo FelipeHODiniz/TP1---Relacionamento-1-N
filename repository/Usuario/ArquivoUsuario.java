@@ -27,7 +27,7 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
 
     public Usuario buscarPorEmail(String email) {
         try {
-            return read(email.hashCode());
+            return read(email);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

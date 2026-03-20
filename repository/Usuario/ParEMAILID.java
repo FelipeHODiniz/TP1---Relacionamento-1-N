@@ -9,7 +9,7 @@ public class ParEMAILID implements repository.RegistroHashExtensivel<ParEMAILID>
     
     private int id;     // valor
     private String email; // chave
-    private final short TAMANHO = 30;  // tamanho em bytes
+    private final short TAMANHO = 80;  // tamanho em bytes
 
     public ParEMAILID() {
         this.id = -1;
