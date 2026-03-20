@@ -1,49 +1,194 @@
 import java.util.Scanner;
-
+import controller.UsuarioController;
+import view.InicioView;
+import view.LoginView;
+import view.DadosView;
+import model.Usuario;
 
 public class Principal {
 
-public static void main(String[] args) {
+    private static final Scanner CONSOLE = new Scanner(System.in);
+    private static final LoginView LOGIN_VIEW = new LoginView(CONSOLE);
+    private static final InicioView INICIO_VIEW = new InicioView(CONSOLE);
+    private static final DadosView DADOS_VIEW = new DadosView(CONSOLE);
+    private static UsuarioController USUARIO_CONTROLLER;
 
-    Scanner console;
-
-    try {
-        console = new Scanner(System.in);
-        int opcao;
-        do {
-
-            System.out.println("\n\nAEDsIII");
-            System.out.println("-------");
-            System.out.println("> Início");
-            System.out.println("\n1 - Clientes");
-            System.out.println("0 - Sair");
-
-            System.out.print("\nOpção: ");
-            try {
-                opcao = Integer.valueOf(console.nextLine());
-            } catch(NumberFormatException e) {
-                opcao = -1;
+    public static void main(String[] args){
+        try {
+            USUARIO_CONTROLLER = new UsuarioController();
+            menuInicial();
+        } catch (Exception e) {
+            System.out.println("Erro ao iniciar o sistema.");
+            e.printStackTrace();
+        } finally {
+            if (USUARIO_CONTROLLER != null) {
+                try {
+                    USUARIO_CONTROLLER.close();
+                } catch (Exception e) {
+                    System.out.println("Erro ao encerrar recursos do sistema.");
+                    e.printStackTrace();
+                }
             }
-
-            switch (opcao) {
-                case 1:
-                    (new MenuClientes()).menu();
-                    break;
-                case 0:
-                    break;
-                default:
-                    System.out.println("Opção inválida!");
-                    break;
-            }
-
-        } while (opcao != 0);
-
-
-
-    } catch(Exception e) {
-        e.printStackTrace();
+        }
     }
 
+    private static void menuInicial() throws Exception {
+        String opcao;
+        boolean executando = true;
+
+        while (executando) {
+            opcao = LOGIN_VIEW.lerOpcaoMenuInicial();
+
+            switch (opcao) {
+                case "A":
+                    executando = realizarLogin();
+                    break;
+                case "B":
+                    cadastrarNovoUsuario();
+                    break;
+                case "S":
+                    LOGIN_VIEW.mostrarMensagem("Encerrando...");
+                    executando = false;
+                    break;
+                default:
+                    LOGIN_VIEW.mostrarMensagem("Opcao invalida.");
+                    break;
+            }
+        }
+    }
+
+    private static boolean realizarLogin() throws Exception {
+        LoginView.CredenciaisLogin credenciais = LOGIN_VIEW.lerCredenciaisLogin();
+        String email = credenciais.email;
+
+        if (!emailValido(email)) {
+            LOGIN_VIEW.mostrarMensagem("Email invalido.");
+            return true;
+        }
+
+        boolean loginValido = USUARIO_CONTROLLER.login(email, credenciais.senha);
+        if (!loginValido) {
+            LOGIN_VIEW.mostrarMensagem("Usuario nao cadastrado ou senha incorreta.");
+            return true;
+        }
+
+        LOGIN_VIEW.mostrarMensagem("Login realizado com sucesso.");
+        return menuInicioAposLogin(email);
+    }
+
+    private static boolean menuInicioAposLogin(String email) throws Exception {
+        String opcao;
+
+        do {
+            opcao = INICIO_VIEW.lerOpcaoMenuInicio();
+            switch (opcao) {
+                case "A":
+                    if (!menuMeusDados(email)) {
+                        return false;
+                    }
+                    break;
+                case "B":
+                    INICIO_VIEW.mostrarMensagem("Tela de Meus cursos em desenvolvimento.");
+                    break;
+                case "C":
+                    INICIO_VIEW.mostrarMensagem("Tela de Minhas inscricoes em desenvolvimento.");
+                    break;
+                case "S":
+                    INICIO_VIEW.mostrarMensagem("Encerrando...");
+                    return false;
+                default:
+                    INICIO_VIEW.mostrarMensagem("Opcao invalida.");
+                    break;
+            }
+        } while (true);
+    }
+
+    private static boolean menuMeusDados(String email) throws Exception {
+        Usuario usuario = USUARIO_CONTROLLER.buscarPorEmail(email);
+        if (usuario == null) {
+            DADOS_VIEW.mostrarMensagem("Usuario nao encontrado.");
+            return true;
+        }
+
+        boolean emDados = true;
+        while (emDados) {
+            String opcao = DADOS_VIEW.lerOpcaoMenuDados(usuario);
+            switch (opcao) {
+                case "A":
+                    DadosView.DadosAtualizados novos = DADOS_VIEW.lerDadosAtualizados(usuario);
+                    boolean ok = USUARIO_CONTROLLER.atualizarDados(email, novos.nome, novos.email, novos.pergunta, novos.resposta);
+                    if (ok) {
+                        DADOS_VIEW.mostrarMensagem("Dados atualizados com sucesso.");
+                        usuario.nome = novos.nome;
+                        usuario.email = novos.email;
+                        usuario.PerguntaSecreta = novos.pergunta;
+                        usuario.RespostaSecreta = novos.resposta;
+                        email = novos.email;
+                    } else {
+                        DADOS_VIEW.mostrarMensagem("Falha ao atualizar dados.");
+                    }
+                    break;
+                case "B":
+                    if (DADOS_VIEW.confirmarExclusao()) {
+                        boolean apagou = USUARIO_CONTROLLER.deletarPorEmail(email);
+                        if (apagou) {
+                            DADOS_VIEW.mostrarMensagem("Conta deletada com sucesso.");
+                            return false;
+                        } else {
+                            DADOS_VIEW.mostrarMensagem("Falha ao deletar conta.");
+                        }
+                    }
+                    break;
+                case "S":
+                    emDados = false;
+                    break;
+                default:
+                    DADOS_VIEW.mostrarMensagem("Opcao invalida.");
+                    break;
+            }
+        }
+
+        return true;
+    }
+
+    private static void cadastrarNovoUsuario() throws Exception {
+        LoginView.DadosNovoUsuario dados = LOGIN_VIEW.lerNovoUsuario();
+
+        if (dados.nome.length() < 4) {
+            LOGIN_VIEW.mostrarMensagem("O nome deve ter no minimo 4 caracteres.");
+            return;
+        }
+
+        if (!emailValido(dados.email)) {
+            LOGIN_VIEW.mostrarMensagem("Email invalido.");
+            return;
+        }
+
+        if (dados.senha.isEmpty()) {
+            LOGIN_VIEW.mostrarMensagem("Senha nao pode ser vazia.");
+            return;
+        }
+
+        Usuario novoUsuario = new Usuario(
+            dados.nome,
+            dados.email,
+            dados.senha,
+            dados.pergunta,
+            dados.resposta
+        );
+
+        int id = USUARIO_CONTROLLER.cadastrar(novoUsuario);
+        if (id < 0) {
+            LOGIN_VIEW.mostrarMensagem("Ja existe usuario cadastrado com esse email.");
+            return;
+        }
+
+        LOGIN_VIEW.mostrarMensagem("Usuario cadastrado com sucesso. ID: " + id);
+    }
+
+    private static boolean emailValido(String email) {
+        return email != null && email.contains("@")
+            && email.indexOf('@') > 0 && email.indexOf('@') < email.length() - 1;
+    }
 }
 
-}
