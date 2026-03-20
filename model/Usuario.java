@@ -46,6 +46,10 @@ public class Usuario implements Registro {
         return email;
     }
 
+    public String getNome() {
+        return nome;
+    }
+
     public void setHashSenha(final String hashSenha){
         this.hashSenha = hashSenha;
     }

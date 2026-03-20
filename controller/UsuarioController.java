@@ -19,6 +19,10 @@ public class UsuarioController {
         repository.close();
     }
 
+    public Usuario buscarPorEmail(String email) {
+        return this.repository.buscarPorEmail(email);
+    }
+
     public boolean login(String email, String senha){
         Usuario usuario = this.repository.buscarPorEmail(email);
         if (usuario == null) {
@@ -42,6 +46,43 @@ public class UsuarioController {
             e.printStackTrace();;
         }
         return id;
+    }
+
+    public boolean atualizarDados(String emailOriginal, String novoNome, String novoEmail, String novaPergunta, String novaResposta) {
+        try {
+            Usuario usuario = repository.buscarPorEmail(emailOriginal);
+            if (usuario == null) {
+                return false;
+            }
+
+            // Se estiver alterando o email, verifica se já existe outro usuário com o novo email
+            if (!novoEmail.equals(emailOriginal)) {
+                Usuario existente = repository.buscarPorEmail(novoEmail);
+                if (existente != null && existente.getId() != usuario.getId()) {
+                    return false;
+                }
+            }
+
+            usuario.nome = novoNome;
+            usuario.email = novoEmail;
+            // mantem o hash da senha
+            usuario.PerguntaSecreta = novaPergunta;
+            usuario.RespostaSecreta = novaResposta;
+
+            return repository.update(usuario);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean deletarPorEmail(String email) {
+        try {
+            return repository.delete(email);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public String toMd5(final String senha) {

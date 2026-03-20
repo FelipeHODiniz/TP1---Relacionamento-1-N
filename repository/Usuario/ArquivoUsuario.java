@@ -43,10 +43,10 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
     
     public boolean delete(String email) throws Exception {
         ParEMAILID pei = indiceIndiretoEMAIL.read(email.hashCode());
-        if(pei != null) 
-            if(delete(pei.getId())) 
-                return indiceIndiretoEMAIL.delete(email.hashCode());
-        return false;
+        if (pei == null) {
+            return false;
+        }
+        return delete(pei.getId());
     }
 
     @Override
@@ -61,9 +61,15 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
 
     @Override
     public boolean update(Usuario novoUsuario) throws Exception {
-        Usuario usuarioVelho = read(novoUsuario.getEmail());
-        if(super.update(novoUsuario)) {
-            if(novoUsuario.getEmail().compareTo(usuarioVelho.getEmail())!=0) {
+        // Recupera o registro antigo pelo ID para ter o email antigo
+        Usuario usuarioVelho = super.read(novoUsuario.getId());
+        if (usuarioVelho == null) {
+            return false;
+        }
+
+        if (super.update(novoUsuario)) {
+            if (!novoUsuario.getEmail().equals(usuarioVelho.getEmail())) {
+                // Atualiza o índice indireto de email
                 indiceIndiretoEMAIL.delete(usuarioVelho.getEmail().hashCode());
                 indiceIndiretoEMAIL.create(new ParEMAILID(novoUsuario.getId(), novoUsuario.getEmail()));
             }

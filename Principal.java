@@ -2,6 +2,7 @@ import java.util.Scanner;
 import controller.UsuarioController;
 import view.InicioView;
 import view.LoginView;
+import view.DadosView;
 import model.Usuario;
 
 public class Principal {
@@ -9,6 +10,7 @@ public class Principal {
     private static final Scanner CONSOLE = new Scanner(System.in);
     private static final LoginView LOGIN_VIEW = new LoginView(CONSOLE);
     private static final InicioView INICIO_VIEW = new InicioView(CONSOLE);
+    private static final DadosView DADOS_VIEW = new DadosView(CONSOLE);
     private static UsuarioController USUARIO_CONTROLLER;
 
     public static void main(String[] args){
@@ -71,17 +73,19 @@ public class Principal {
         }
 
         LOGIN_VIEW.mostrarMensagem("Login realizado com sucesso.");
-        return menuInicioAposLogin();
+        return menuInicioAposLogin(email);
     }
 
-    private static boolean menuInicioAposLogin() {
+    private static boolean menuInicioAposLogin(String email) throws Exception {
         String opcao;
 
         do {
             opcao = INICIO_VIEW.lerOpcaoMenuInicio();
             switch (opcao) {
                 case "A":
-                    INICIO_VIEW.mostrarMensagem("Tela de Meus dados em desenvolvimento.");
+                    if (!menuMeusDados(email)) {
+                        return false;
+                    }
                     break;
                 case "B":
                     INICIO_VIEW.mostrarMensagem("Tela de Meus cursos em desenvolvimento.");
@@ -97,6 +101,54 @@ public class Principal {
                     break;
             }
         } while (true);
+    }
+
+    private static boolean menuMeusDados(String email) throws Exception {
+        Usuario usuario = USUARIO_CONTROLLER.buscarPorEmail(email);
+        if (usuario == null) {
+            DADOS_VIEW.mostrarMensagem("Usuario nao encontrado.");
+            return true;
+        }
+
+        boolean emDados = true;
+        while (emDados) {
+            String opcao = DADOS_VIEW.lerOpcaoMenuDados(usuario);
+            switch (opcao) {
+                case "A":
+                    DadosView.DadosAtualizados novos = DADOS_VIEW.lerDadosAtualizados(usuario);
+                    boolean ok = USUARIO_CONTROLLER.atualizarDados(email, novos.nome, novos.email, novos.pergunta, novos.resposta);
+                    if (ok) {
+                        DADOS_VIEW.mostrarMensagem("Dados atualizados com sucesso.");
+                        usuario.nome = novos.nome;
+                        usuario.email = novos.email;
+                        usuario.PerguntaSecreta = novos.pergunta;
+                        usuario.RespostaSecreta = novos.resposta;
+                        email = novos.email;
+                    } else {
+                        DADOS_VIEW.mostrarMensagem("Falha ao atualizar dados.");
+                    }
+                    break;
+                case "B":
+                    if (DADOS_VIEW.confirmarExclusao()) {
+                        boolean apagou = USUARIO_CONTROLLER.deletarPorEmail(email);
+                        if (apagou) {
+                            DADOS_VIEW.mostrarMensagem("Conta deletada com sucesso.");
+                            return false;
+                        } else {
+                            DADOS_VIEW.mostrarMensagem("Falha ao deletar conta.");
+                        }
+                    }
+                    break;
+                case "S":
+                    emDados = false;
+                    break;
+                default:
+                    DADOS_VIEW.mostrarMensagem("Opcao invalida.");
+                    break;
+            }
+        }
+
+        return true;
     }
 
     private static void cadastrarNovoUsuario() throws Exception {

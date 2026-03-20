@@ -9,20 +9,23 @@ public class ParEMAILID implements repository.RegistroHashExtensivel<ParEMAILID>
     
     private int id;     // valor
     private String email; // chave
-    private final short TAMANHO = 80;  // tamanho em bytes
+    private final short TAMANHO = 30;  // tamanho em bytes
 
     public ParEMAILID() {
         this.id = -1;
         this.email = "";
     }
 
-    public static ParEMAILID criar(int id, String email){
-        return new ParEMAILID(id, email);
-    }
-
     public ParEMAILID(int id, String email) {
+        try{
         this.id = id;
         this.email = email;
+        if(email.getBytes().length + 4 > TAMANHO)
+            throw new Exception("Número de caracteres do email excede o limite de " + (TAMANHO-4) + " bytes");
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String getEmail() {
@@ -50,7 +53,11 @@ public class ParEMAILID implements repository.RegistroHashExtensivel<ParEMAILID>
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeInt(this.id);
         dos.writeUTF(this.email);
-        return baos.toByteArray();
+        byte[] bs = baos.toByteArray();
+        byte[] bs2 = new byte[TAMANHO];
+        int len = Math.min(bs.length, TAMANHO);
+        System.arraycopy(bs, 0, bs2, 0, len);
+        return bs2;
     }
 
     public void fromByteArray(byte[] ba) throws IOException {
