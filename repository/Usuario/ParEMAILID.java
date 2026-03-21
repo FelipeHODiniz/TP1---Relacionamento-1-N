@@ -47,6 +47,10 @@ public class ParEmailID implements repository.RegistroHashExtensivel<ParEmailID>
     }
   }
 
+  public int getId(){
+    return this.id;
+  }
+
   @Override
   public int hashCode() {
     return Math.abs(this.email.hashCode());

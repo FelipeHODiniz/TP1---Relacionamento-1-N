@@ -6,12 +6,12 @@ import repository.HashExtensivel;
 public class ArquivoUsuario extends Arquivo<Usuario> {
 
     Arquivo<Usuario> arqUsuarios;
-    HashExtensivel<ParEMAILID> indiceIndiretoEMAIL;
+    HashExtensivel<ParEmailID> indiceIndiretoEMAIL;
 
     public ArquivoUsuario() throws Exception {
         super("usuarios", Usuario.class.getConstructor());
         indiceIndiretoEMAIL = new HashExtensivel<>(
-            ParEMAILID.class.getConstructor(), 
+            ParEmailID.class.getConstructor(), 
             4, 
             ".\\dados\\usuarios\\indiceEMAIL.d.db",   // diretório
             ".\\dados\\usuarios\\indiceEMAIL.c.db"    // cestos 
@@ -21,7 +21,7 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
     @Override
     public int create(Usuario u) throws Exception {
         int id = super.create(u);
-        indiceIndiretoEMAIL.create(new ParEMAILID(id, u.getEmail()));
+        indiceIndiretoEMAIL.create(new ParEmailID(u.getEmail(), id));
         return id;
     }
 
@@ -35,14 +35,14 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
     }
 
     public Usuario read(String email) throws Exception {
-        ParEMAILID pei = indiceIndiretoEMAIL.read(email.hashCode());
+        ParEmailID pei = indiceIndiretoEMAIL.read(ParEmailID.hash(email));
         if(pei == null)
             return null;
         return read(pei.getId());
     }
     
     public boolean delete(String email) throws Exception {
-        ParEMAILID pei = indiceIndiretoEMAIL.read(email.hashCode());
+        ParEmailID pei = indiceIndiretoEMAIL.read(ParEmailID.hash(email));
         if (pei == null) {
             return false;
         }
@@ -54,7 +54,7 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
         Usuario u = super.read(id);
         if(u != null) {
             if(super.delete(id))
-                return indiceIndiretoEMAIL.delete(u.getEmail().hashCode());
+                return indiceIndiretoEMAIL.delete(ParEmailID.hash(u.getEmail()));
         }
         return false;
     }
@@ -70,8 +70,8 @@ public class ArquivoUsuario extends Arquivo<Usuario> {
         if (super.update(novoUsuario)) {
             if (!novoUsuario.getEmail().equals(usuarioVelho.getEmail())) {
                 // Atualiza o índice indireto de email
-                indiceIndiretoEMAIL.delete(usuarioVelho.getEmail().hashCode());
-                indiceIndiretoEMAIL.create(new ParEMAILID(novoUsuario.getId(), novoUsuario.getEmail()));
+                indiceIndiretoEMAIL.delete(ParEmailID.hash(usuarioVelho.getEmail()));
+                indiceIndiretoEMAIL.create(new ParEmailID( novoUsuario.getEmail(),novoUsuario.getId()));
             }
             return true;
         }
