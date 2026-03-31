@@ -1,1 +1,3 @@
 /dados
+*.db
+.vscode/settings.json
