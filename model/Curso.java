@@ -1,6 +1,13 @@
 package model;
 
-public class Curso {
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import repository.Registro;
+
+public class Curso implements Registro {
 
     public int id;
     public String nome;
@@ -64,5 +71,36 @@ public class Curso {
     }*/
     public void setEstado(int estado) {
         this.estado = estado;
-    }   
+    }
+
+    public void setCodigoCompartilhavel(String codigoCompartilhavel) {
+        this.codigoCompartilhavel = codigoCompartilhavel;
+    }
+
+    @Override
+    public byte[] toByteArray() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        dos.writeInt(id);
+        dos.writeUTF(nome);
+        dos.writeUTF(dataInicioCurso);
+        dos.writeUTF(descricao);
+        dos.writeUTF(codigoCompartilhavel);
+        dos.writeInt(estado);
+        dos.writeInt(usuarioId);
+        return baos.toByteArray();
+    }
+
+    @Override
+    public void fromByteArray(byte[] b) throws IOException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(b);
+        DataInputStream dis = new DataInputStream(bais);
+        this.id = dis.readInt();
+        this.nome = dis.readUTF();
+        this.dataInicioCurso = dis.readUTF();
+        this.descricao = dis.readUTF();
+        this.codigoCompartilhavel = dis.readUTF();
+        this.estado = dis.readInt();
+        this.usuarioId = dis.readInt();
+    }
 }

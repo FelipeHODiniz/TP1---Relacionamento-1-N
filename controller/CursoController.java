@@ -65,4 +65,23 @@ public class CursoController {
             return false;
         }
     }
+
+    // Retorna true se o usuário tiver cursos ativos (estado 0 ou 1)
+    public boolean temCursosAtivos(int usuarioId) {
+        try {
+            return repository.temCursosAtivos(usuarioId);
+        } catch (Exception e) {
+            System.out.println("Erro ao verificar cursos ativos");
+            return false;
+        }
+    }
+
+    // Exclui todos os cursos inativos do usuário (estado 2 ou 3)
+    public void excluirCursosInativos(int usuarioId) {
+        try {
+            repository.deletarCursosInativos(usuarioId);
+        } catch (Exception e) {
+            System.out.println("Erro ao excluir cursos inativos");
+        }
+    }
 }
