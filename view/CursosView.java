@@ -14,25 +14,47 @@ public class CursosView {
     }
 
     public String lerOpcaoMenuCursos(Usuario usuario, List<Curso> cursos) {
-		System.out.println("\nEntrePares 1.0");
-		System.out.println("-----------------");
-		System.out.println("Inicio > Meus cursos");
-		System.out.println("\nCURSOS");
-		
+
+        System.out.println("\nEntrePares 1.0");
+        System.out.println("--------------");
+        System.out.println("> Início > Meus cursos");
+
+        System.out.println("\nCURSOS");
+
         int index = 1;
         for (Curso curso : cursos) {
             System.out.println("(" + index + ") " + curso.getNome() + " - " + curso.getDataInicioCurso());
             index++;
         }
 
-		System.out.println("\n(A) Novo curso");
-		System.out.println("(R) Retornar ao menu anterior");
-		System.out.print("\nOpcao: ");
+        System.out.println("\n(A) Novo curso");
+        System.out.println("(R) Retornar ao menu anterior");
+        System.out.print("\nOpção: ");
 
-		if (!console.hasNextLine()) {
-			return "R";
-		}
+        if (!console.hasNextLine()) {
+            return "R";
+        }
 
-		return console.nextLine().trim().toUpperCase();
-	}
+        String opcao = console.nextLine().trim().toUpperCase();
+
+        // ✅ Se for número, valida
+        if (opcao.matches("\\d+")) {
+            int num = Integer.parseInt(opcao);
+
+            if (num >= 1 && num <= cursos.size()) {
+                return opcao; // válido
+            } else {
+                System.out.println("Opção inválida.");
+                return "";
+            }
+        }
+
+        // valida opções de letra
+        if (opcao.equals("A") || opcao.equals("R")) {
+            return opcao;
+        }
+
+        System.out.println("Opção inválida.");
+        return "";
+    }
 }

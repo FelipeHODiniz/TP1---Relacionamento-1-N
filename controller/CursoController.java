@@ -36,12 +36,12 @@ public class CursoController {
         }
     }
 
-    // READ (todos)
-    public List<Curso> listar() {
+    // ✅ LISTAR POR USUÁRIO (COM ÁRVORE B+)
+    public List<Curso> listarPorUsuario(int usuarioId) {
         try {
-            return repository.readAll();
+            return repository.listarPorUsuario(usuarioId);
         } catch (Exception e) {
-            System.out.println("Erro ao listar cursos");
+            System.out.println("Erro ao listar cursos do usuário");
             return null;
         }
     }
