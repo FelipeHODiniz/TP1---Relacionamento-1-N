@@ -11,12 +11,11 @@
  * Implementado pelo Prof. Marcos Kutova
  * v2.0 - 2021
  */
+package repository;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-
-package repository;
 
 // Esta versão da árvore funciona apenas como um conjunto de par de chaves.
 // A primeira chave pode repetir na árvore, mas não o par de chaves, 
