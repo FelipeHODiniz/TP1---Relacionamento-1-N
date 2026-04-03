@@ -1,9 +1,15 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import controller.CursoController;
 import controller.UsuarioController;
+import model.Curso;
+import model.Usuario;
+import view.CursoDetalheView;
+import view.CursosView;
+import view.DadosView;
 import view.InicioView;
 import view.LoginView;
-import view.DadosView;
-import model.Usuario;
 
 public class Principal {
 
@@ -11,11 +17,15 @@ public class Principal {
     private static final LoginView LOGIN_VIEW = new LoginView(CONSOLE);
     private static final InicioView INICIO_VIEW = new InicioView(CONSOLE);
     private static final DadosView DADOS_VIEW = new DadosView(CONSOLE);
+    private static final CursosView CURSOS_VIEW = new CursosView(CONSOLE);
+    private static final CursoDetalheView CURSO_DETALHE_VIEW = new CursoDetalheView(CONSOLE);
     private static UsuarioController USUARIO_CONTROLLER;
+    private static CursoController CURSO_CONTROLLER;
 
     public static void main(String[] args){
         try {
             USUARIO_CONTROLLER = new UsuarioController();
+            CURSO_CONTROLLER = new CursoController();
             menuInicial();
         } catch (Exception e) {
             System.out.println("Erro ao iniciar o sistema.");
@@ -26,6 +36,14 @@ public class Principal {
                     USUARIO_CONTROLLER.close();
                 } catch (Exception e) {
                     System.out.println("Erro ao encerrar recursos do sistema.");
+                    e.printStackTrace();
+                }
+            }
+            if (CURSO_CONTROLLER != null) {
+                try {
+                    CURSO_CONTROLLER.close();
+                } catch (Exception e) {
+                    System.out.println("Erro ao encerrar recursos de cursos.");
                     e.printStackTrace();
                 }
             }
@@ -88,7 +106,9 @@ public class Principal {
                     }
                     break;
                 case "B":
-                    INICIO_VIEW.mostrarMensagem("Tela de Meus cursos em desenvolvimento.");
+                    if (!menuMeusCursos(email)) {
+                        return false;
+                    }
                     break;
                 case "C":
                     INICIO_VIEW.mostrarMensagem("Tela de Minhas inscricoes em desenvolvimento.");
@@ -101,6 +121,93 @@ public class Principal {
                     break;
             }
         } while (true);
+    }
+
+    private static boolean menuMeusCursos(String email) throws Exception {
+        Usuario usuario = USUARIO_CONTROLLER.buscarPorEmail(email);
+        if (usuario == null) {
+            INICIO_VIEW.mostrarMensagem("Usuario nao encontrado.");
+            return true;
+        }
+
+        boolean emCursos = true;
+        while (emCursos) {
+            List<Curso> cursos = CURSO_CONTROLLER.listarPorUsuario(usuario.getId());
+            if (cursos == null) cursos = new ArrayList<>();
+
+            String opcao = CURSOS_VIEW.lerOpcaoMenuCursos(usuario, cursos);
+
+            if (opcao.equals("R")) {
+                emCursos = false;
+            } else if (opcao.equals("A")) {
+                CursosView.DadosNovoCurso dados = CURSOS_VIEW.lerDadosNovoCurso();
+                Curso novo = new Curso(-1, dados.nome, dados.dataInicioCurso, dados.descricao, 0, usuario.getId());
+                int id = CURSO_CONTROLLER.cadastrar(novo);
+                CURSOS_VIEW.mostrarMensagem(id >= 0
+                    ? "Curso criado com sucesso. ID: " + id
+                    : "Falha ao criar curso.");
+            } else if (opcao.matches("\\d+")) {
+                int idx = Integer.parseInt(opcao) - 1;
+                menuDetalheCurso(cursos.get(idx));
+            }
+        }
+
+        return true;
+    }
+
+    private static void menuDetalheCurso(Curso curso) throws Exception {
+        boolean emDetalhe = true;
+        while (emDetalhe) {
+            String opcao = CURSO_DETALHE_VIEW.mostrarMenuCurso(curso);
+            switch (opcao) {
+                case "A":
+                    CURSO_DETALHE_VIEW.mostrarMensagem("Gerenciar inscritos em desenvolvimento.");
+                    break;
+                case "B":
+                    CursoDetalheView.DadosAtualizados novos = CURSO_DETALHE_VIEW.lerDadosAtualizados(curso);
+                    curso.setNome(novos.nome);
+                    curso.setDataInicioCurso(novos.dataInicioCurso);
+                    curso.setDescricao(novos.descricao);
+                    boolean ok = CURSO_CONTROLLER.atualizar(curso);
+                    CURSO_DETALHE_VIEW.mostrarMensagem(ok
+                        ? "Curso atualizado com sucesso."
+                        : "Falha ao atualizar curso.");
+                    break;
+                case "C":
+                    if (CURSO_DETALHE_VIEW.confirmarAcao("Encerrar inscricoes")) {
+                        curso.setEstado(1);
+                        CURSO_CONTROLLER.atualizar(curso);
+                        CURSO_DETALHE_VIEW.mostrarMensagem("Inscricoes encerradas.");
+                    }
+                    break;
+                case "D":
+                    if (CURSO_DETALHE_VIEW.confirmarAcao("Concluir curso")) {
+                        curso.setEstado(2);
+                        CURSO_CONTROLLER.atualizar(curso);
+                        CURSO_DETALHE_VIEW.mostrarMensagem("Curso concluido.");
+                    }
+                    break;
+                case "E":
+                    if (CURSO_DETALHE_VIEW.confirmarAcao("Cancelar curso")) {
+                        // Sem inscrições: exclui o curso. Com inscrições (TP2): apenas cancela.
+                        boolean excluido = CURSO_CONTROLLER.excluir(curso.getId());
+                        if (excluido) {
+                            CURSO_DETALHE_VIEW.mostrarMensagem("Curso cancelado e excluido.");
+                            emDetalhe = false;
+                        } else {
+                            curso.setEstado(3);
+                            CURSO_CONTROLLER.atualizar(curso);
+                            CURSO_DETALHE_VIEW.mostrarMensagem("Curso cancelado.");
+                        }
+                    }
+                    break;
+                case "R":
+                    emDetalhe = false;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     private static boolean menuMeusDados(String email) throws Exception {
@@ -130,12 +237,17 @@ public class Principal {
                     break;
                 case "B":
                     if (DADOS_VIEW.confirmarExclusao()) {
-                        boolean apagou = USUARIO_CONTROLLER.deletarPorEmail(email);
-                        if (apagou) {
-                            DADOS_VIEW.mostrarMensagem("Conta deletada com sucesso.");
-                            return false;
+                        if (CURSO_CONTROLLER.temCursosAtivos(usuario.getId())) {
+                            DADOS_VIEW.mostrarMensagem("Nao e possivel excluir usuario com cursos ativos.");
                         } else {
-                            DADOS_VIEW.mostrarMensagem("Falha ao deletar conta.");
+                            CURSO_CONTROLLER.excluirCursosInativos(usuario.getId());
+                            boolean apagou = USUARIO_CONTROLLER.deletarPorEmail(email);
+                            if (apagou) {
+                                DADOS_VIEW.mostrarMensagem("Conta deletada com sucesso.");
+                                return false;
+                            } else {
+                                DADOS_VIEW.mostrarMensagem("Falha ao deletar conta.");
+                            }
                         }
                     }
                     break;

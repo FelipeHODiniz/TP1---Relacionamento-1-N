@@ -7,8 +7,44 @@ public class CursoDetalheView {
 
     private final Scanner console;
 
+    public static class DadosAtualizados {
+        public String nome;
+        public String dataInicioCurso;
+        public String descricao;
+    }
+
     public CursoDetalheView(Scanner console) {
         this.console = console;
+    }
+
+    public void mostrarMensagem(String msg) {
+        System.out.println(msg);
+    }
+
+    public boolean confirmarAcao(String acao) {
+        System.out.print(acao + "? Confirmar (S/N): ");
+        if (!console.hasNextLine()) return false;
+        return console.nextLine().trim().equalsIgnoreCase("S");
+    }
+
+    public DadosAtualizados lerDadosAtualizados(Curso curso) {
+        DadosAtualizados dados = new DadosAtualizados();
+
+        System.out.println("\n> Corrigir dados do curso (Enter para manter o valor atual)");
+
+        System.out.print("Nome [" + curso.getNome() + "]: ");
+        String nome = console.nextLine().trim();
+        dados.nome = nome.isEmpty() ? curso.getNome() : nome;
+
+        System.out.print("Data de início [" + curso.getDataInicioCurso() + "]: ");
+        String data = console.nextLine().trim();
+        dados.dataInicioCurso = data.isEmpty() ? curso.getDataInicioCurso() : data;
+
+        System.out.print("Descrição [" + curso.getDescricao() + "]: ");
+        String desc = console.nextLine().trim();
+        dados.descricao = desc.isEmpty() ? curso.getDescricao() : desc;
+
+        return dados;
     }
 
     public String mostrarMenuCurso(Curso curso) {
