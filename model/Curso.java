@@ -1,4 +1,4 @@
-
+package model;
 
 public class Curso {
 
@@ -6,18 +6,22 @@ public class Curso {
     public String nome;
     public String dataInicioCurso;
     public String descricao;
+    public String codigoCompartilhavel;
     public int estado;
+    public int usuarioId;
 
     //Construtores
     public Curso() {
-        this(-1, "", "", "", 0);
+        this(-1, "", "", "", 0, 0);
     }
-    public Curso(int i, String n, String d, String des, int e) {
+    public Curso(int i, String n, String d, String des, int e, int u) {
         this.id = i;
         this.nome = n;
         this.dataInicioCurso = d;
         this.descricao = des;
+        this.codigoCompartilhavel = NanoID.gerarCodigo(10);
         this.estado = e;
+        this.usuarioId = u;
     }
 
     //Getters
@@ -32,6 +36,9 @@ public class Curso {
     }
     public String getDescricao() {
         return descricao;
+    }
+    public String getCodigoCompartilhavel() {
+        return codigoCompartilhavel;
     }
     public int getEstado() {
         return estado;
@@ -50,9 +57,12 @@ public class Curso {
     public void setDescricao(String descricao) {
         this.descricao = descricao;
     }
+    /* 
+    O codigo é gerado pelo sistema, então não é necessário um setter para ele
+    public void setCodigoCompartilhavel(String codigoCompartilhavel) {
+        this.codigoCompartilhavel = codigoCompartilhavel;
+    }*/
     public void setEstado(int estado) {
         this.estado = estado;
-    }
-
-
+    }   
 }
