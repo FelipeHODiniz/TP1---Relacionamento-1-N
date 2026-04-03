@@ -77,4 +77,11 @@ public class ParIntInt implements repository.RegistroArvoreBMais<ParIntInt> {
     this.num2 = dis.readInt();
   }
 
+  public int getNum1() {
+     return num1; 
+    }
+  public int getNum2() {
+     return num2;
+    }
+
 }

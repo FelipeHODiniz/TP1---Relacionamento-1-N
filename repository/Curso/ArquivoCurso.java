@@ -1,217 +1,81 @@
 package repository.Curso;
 
-import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import model.Curso;
+import repository.Arquivo;
 import repository.ArvoreBMais;
 
-public class ArquivoCurso {
+public class ArquivoCurso extends Arquivo<Curso> {
 
-    private RandomAccessFile arquivo;
-    private final String nomeArquivo = "cursos.db";
-
-    private ArvoreBMais<ParNomeId> indiceNome;
+    // Índice do relacionamento 1:N (idUsuario, idCurso)
+    private ArvoreBMais<ParIntInt> indiceUsuarioCurso;
 
     public ArquivoCurso() throws Exception {
-        arquivo = new RandomAccessFile(nomeArquivo, "rw");
+        super("cursos", Curso.class.getConstructor());
 
-        if (arquivo.length() == 0) {
-            arquivo.writeInt(0); // último ID
-        }
-
-        indiceNome = new ArvoreBMais<>(
-            ParNomeId.class.getConstructor(),
+        indiceUsuarioCurso = new ArvoreBMais<>(
+            ParIntInt.class.getConstructor(),
             5,
-            "indiceNomeCurso.db"
+            ".\\dados\\cursos\\indiceUsuarioCurso.db"
         );
     }
 
-    public void close() throws Exception {
-        arquivo.close();
-    }
-
-    // CREATE
+    @Override
     public int create(Curso c) throws Exception {
-
-        arquivo.seek(0);
-        int ultimoId = arquivo.readInt();
-        ultimoId++;
-
-        c.setId(ultimoId);
-
-        arquivo.seek(0);
-        arquivo.writeInt(ultimoId);
-
-        arquivo.seek(arquivo.length());
-
-        byte[] ba = toByteArray(c);
-
-        arquivo.writeBoolean(false);
-        arquivo.writeInt(ba.length);
-        arquivo.write(ba);
-
-        // índice
-        indiceNome.create(new ParNomeId(c.getNome(), c.getId()));
-
-        return c.getId();
+        int id = super.create(c);
+        indiceUsuarioCurso.create(new ParIntInt(c.usuarioId, id));
+        return id;
     }
 
-    // READ
-    public Curso read(int id) throws Exception {
+    @Override
+    public boolean update(Curso novo) throws Exception {
+        if (super.update(novo)) return true;
+        return false;
+    }
 
-        arquivo.seek(4);
+    @Override
+    public boolean delete(int id) throws Exception {
+        Curso c = super.read(id);
+        if (c == null) return false;
 
-        while (arquivo.getFilePointer() < arquivo.length()) {
-
-            boolean lapide = arquivo.readBoolean();
-            int tamanho = arquivo.readInt();
-
-            byte[] ba = new byte[tamanho];
-            arquivo.read(ba);
-
-            if (!lapide) {
-                Curso c = fromByteArray(ba);
-                if (c.getId() == id)
-                    return c;
-            }
+        if (super.delete(id)) {
+            indiceUsuarioCurso.delete(new ParIntInt(c.usuarioId, c.getId()));
+            return true;
         }
-
-        return null;
+        return false;
     }
 
-    // LISTAR ORDENADO POR NOME (POR USUÁRIO)
+    // Lista cursos do usuário em ordem alfabética
     public List<Curso> listarPorUsuario(int usuarioId) throws Exception {
-
         List<Curso> listaFinal = new ArrayList<>();
-
-        ArrayList<ParNomeId> lista = indiceNome.read(null);
-
-        for (ParNomeId p : lista) {
-            Curso c = read(p.getId());
-
-            if (c != null && c.usuarioId == usuarioId) {
-                listaFinal.add(c);
-            }
+        ArrayList<ParIntInt> lista = indiceUsuarioCurso.read(new ParIntInt(usuarioId));
+        for (ParIntInt p : lista) {
+            Curso c = read(p.getNum2());
+            if (c != null) listaFinal.add(c);
         }
-
+        listaFinal.sort((a, b) -> a.getNome().compareTo(b.getNome()));
         return listaFinal;
     }
 
-    // UPDATE
-    public boolean update(Curso novo) throws Exception {
-
-        arquivo.seek(4);
-
-        while (arquivo.getFilePointer() < arquivo.length()) {
-
-            long pos = arquivo.getFilePointer();
-
-            boolean lapide = arquivo.readBoolean();
-            int tamanho = arquivo.readInt();
-
-            byte[] ba = new byte[tamanho];
-            arquivo.read(ba);
-
-            if (!lapide) {
-                Curso antigo = fromByteArray(ba);
-
-                if (antigo.getId() == novo.getId()) {
-
-                    byte[] novoBa = toByteArray(novo);
-
-                    // atualiza índice se nome mudou
-                    if (!antigo.getNome().equals(novo.getNome())) {
-                        indiceNome.delete(new ParNomeId(antigo.getNome(), antigo.getId()));
-                        indiceNome.create(new ParNomeId(novo.getNome(), novo.getId()));
-                    }
-
-                    if (novoBa.length <= tamanho) {
-                        arquivo.seek(pos + 5);
-                        arquivo.write(novoBa);
-                    } else {
-                        arquivo.seek(pos);
-                        arquivo.writeBoolean(true);
-
-                        arquivo.seek(arquivo.length());
-                        arquivo.writeBoolean(false);
-                        arquivo.writeInt(novoBa.length);
-                        arquivo.write(novoBa);
-                    }
-
-                    return true;
-                }
-            }
+    // Retorna true se o usuário tiver algum curso ativo (estado 0 ou 1)
+    public boolean temCursosAtivos(int usuarioId) throws Exception {
+        ArrayList<ParIntInt> lista = indiceUsuarioCurso.read(new ParIntInt(usuarioId));
+        for (ParIntInt p : lista) {
+            Curso c = read(p.getNum2());
+            if (c != null && (c.getEstado() == 0 || c.getEstado() == 1))
+                return true;
         }
-
         return false;
     }
 
-    // DELETE
-    public boolean delete(int id) throws Exception {
-
-        arquivo.seek(4);
-
-        while (arquivo.getFilePointer() < arquivo.length()) {
-
-            long pos = arquivo.getFilePointer();
-
-            boolean lapide = arquivo.readBoolean();
-            int tamanho = arquivo.readInt();
-
-            byte[] ba = new byte[tamanho];
-            arquivo.read(ba);
-
-            if (!lapide) {
-                Curso c = fromByteArray(ba);
-
-                if (c.getId() == id) {
-
-                    arquivo.seek(pos);
-                    arquivo.writeBoolean(true);
-
-                    indiceNome.delete(new ParNomeId(c.getNome(), c.getId()));
-
-                    return true;
-                }
-            }
+    // Exclui todos os cursos inativos do usuário (estado 2 ou 3)
+    public void deletarCursosInativos(int usuarioId) throws Exception {
+        ArrayList<ParIntInt> lista = indiceUsuarioCurso.read(new ParIntInt(usuarioId));
+        for (ParIntInt p : lista) {
+            Curso c = read(p.getNum2());
+            if (c != null && (c.getEstado() == 2 || c.getEstado() == 3))
+                delete(c.getId());
         }
-
-        return false;
-    }
-
-    // ================= SERIALIZAÇÃO =================
-
-    private byte[] toByteArray(Curso c) throws Exception {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-
-        dos.writeInt(c.getId());
-        dos.writeUTF(c.getNome());
-        dos.writeUTF(c.getDataInicioCurso());
-        dos.writeUTF(c.getDescricao());
-        dos.writeUTF(c.getCodigoCompartilhavel());
-        dos.writeInt(c.getEstado());
-        dos.writeInt(c.usuarioId);
-
-        return baos.toByteArray();
-    }
-
-    private Curso fromByteArray(byte[] ba) throws Exception {
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(ba);
-        DataInputStream dis = new DataInputStream(bais);
-
-        Curso c = new Curso();
-
-        c.setId(dis.readInt());
-        c.setNome(dis.readUTF());
-        c.setDataInicioCurso(dis.readUTF());
-        c.setDescricao(dis.readUTF());
-        c.codigoCompartilhavel = dis.readUTF();
-        c.setEstado(dis.readInt());
-        c.usuarioId = dis.readInt();
-
-        return c;
     }
 }
