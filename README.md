@@ -21,7 +21,7 @@ O sistema, chamado **EntrePares 1.0**, é uma aplicação de linha de comando pa
 - **CRUD de cursos**: cada usuário autenticado pode criar, visualizar, editar, encerrar, concluir ou cancelar seus cursos.
 - **Relacionamento 1:N**: um usuário possui zero ou mais cursos; o vínculo é mantido por uma Árvore B+ de relacionamento.
 - **Código compartilhável**: ao criar um curso, um código único de 10 caracteres (NanoID) é gerado automaticamente.
-- **Estado do curso**: cada curso pode estar em um dos quatro estados — *Aberto* (0), *Inscrições encerradas* (1), *Concluído* (2) ou *Cancelado* (3).
+- **Estado do curso**: cada curso pode estar em um dos quatro estados: *Aberto* (0), *Inscrições encerradas* (1), *Concluído* (2) ou *Cancelado* (3).
 - **Proteção na exclusão de conta**: a conta só pode ser deletada se o usuário não possuir cursos ativos (estado 0 ou 1). Cursos inativos (estado 2 ou 3) são removidos automaticamente antes da exclusão.
 
 ---
@@ -52,35 +52,43 @@ Tela Inicial
 
 ### Tela inicial — Login e Cadastro
 
-[print: tela inicial com as opções (A) Realizar Login, (B) Cadastrar novo usuário e (S) Sair]
+<img width="1317" height="410" alt="{E9F10A14-66ED-49C5-B3DA-2097859236AA}" src="https://github.com/user-attachments/assets/526883c3-b0e7-4345-862d-50af4f52b4a1" />
+
 
 ### Tela de cadastro de usuário
 
-[print: formulário de cadastro solicitando nome, e-mail, senha, pergunta secreta e resposta secreta]
+<img width="1296" height="625" alt="{561545EA-76C1-44EC-A74E-D9969DFBD836}" src="https://github.com/user-attachments/assets/f1181064-e6b1-409f-83ff-bba7628b5745" />
+
 
 ### Tela de login
 
-[print: formulário de login solicitando e-mail e senha]
+<img width="1112" height="534" alt="{5F6EE82F-F9BD-4ACF-A378-F5CA6B6B43DB}" src="https://github.com/user-attachments/assets/f7514727-fce4-4b36-856b-d429a4ae29b9" />
+
 
 ### Menu principal (pós-login)
 
-[print: menu com as opções (A) Meus Dados, (B) Meus Cursos e (S) Sair]
+<img width="1203" height="448" alt="{9CE1DB99-82DB-4DF9-A976-2525AA8CC099}" src="https://github.com/user-attachments/assets/9757093f-75a3-4971-ac1b-c760043b0d29" />
+
 
 ### Meus Dados
 
-[print: exibição dos dados do usuário (nome, e-mail, pergunta secreta) com as opções (A) Alterar dados e (B) Deletar conta]
+<img width="701" height="509" alt="{994AAAB9-0E32-4589-8B87-190EC36ED360}" src="https://github.com/user-attachments/assets/2df9a9dd-12a4-4724-bbfa-9181c865c707" />
+
 
 ### Meus Cursos — lista
 
-[print: lista de cursos do usuário com nome e data, opção (A) para criar novo curso e seleção por número]
+<img width="573" height="377" alt="{F5111B8D-B83E-4CCC-9368-F23463543135}" src="https://github.com/user-attachments/assets/da980dca-7e6d-4cf6-b38b-c1627990c816" />
+
 
 ### Meus Cursos — criar novo curso
 
-[print: formulário de criação de curso solicitando nome, data de início e descrição]
+<img width="671" height="313" alt="{E194C4CC-E062-4B7E-A1A6-31EA8864AF11}" src="https://github.com/user-attachments/assets/d984a919-f4e6-406c-bbfe-943ffa2f14da" />
+
 
 ### Detalhe do curso
 
-[print: exibição completa do curso (nome, data, código compartilhável, estado, descrição) com as opções de gerenciamento (B) Editar, (C) Encerrar inscrições, (D) Concluir, (E) Cancelar]
+<img width="810" height="650" alt="{02A4F57C-EF8A-434C-9612-1890346C8C86}" src="https://github.com/user-attachments/assets/2c5b4105-f9b8-41d1-9ae3-58dfcf280f4b" />
+
 
 ---
 
@@ -134,52 +142,14 @@ Tela Inicial
 | `LoginView` | Tela inicial: menu de login e cadastro. Contém inner class `DadosNovoUsuario` e `CredenciaisLogin`. |
 | `InicioView` | Menu pós-login: Meus Dados / Meus Cursos / Sair. |
 | `DadosView` | Tela de perfil do usuário: exibe dados e permite atualização ou exclusão. Contém inner class `DadosAtualizados`. |
-| `CursosView` | Lista de cursos do usuário; formulário de criação. Contém inner class `DadosNovoCurso`. |
+| `CursosView` | Lista de cursos do usuário e formulário de criação. Contém inner class `DadosNovoCurso`. |
 | `CursoDetalheView` | Exibe detalhes de um curso e opções de gerenciamento. Contém inner class `DadosAtualizados`. |
 
 ### Ponto de entrada
 
 | Classe | Descrição |
 |--------|-----------|
-| `Principal` | Classe `main`. Instancia todos os controllers e views e gerencia o fluxo de navegação completo por máquina de estados com laços aninhados. |
-
----
-
-## Operações Especiais Implementadas
-
-### 1. Hashing de Senha e Resposta Secreta (MD5)
-
-A senha e a resposta secreta **jamais são armazenadas em texto plano**. O método `UsuarioController.toMd5(String)` computa o hash MD5 com encoding UTF-8 e retorna uma string hexadecimal de 32 caracteres. O hash é aplicado:
-- **No cadastro**: antes de persistir o `Usuario`, `hashSenha` e `RespostaSecreta` são substituídos pelos seus hashes.
-- **No login**: a senha digitada é hasheada e comparada ao valor armazenado.
-- **Na atualização**: a resposta secreta só é re-hasheada se o usuário informar um novo valor não vazio; caso contrário o hash atual é preservado.
-
-### 2. Índice Direto — Hashing Extensível (ID → Endereço)
-
-A classe base `Arquivo<T>` mantém um `HashExtensivel<ParIDEndereco>` que mapeia cada ID de registro ao seu endereço (offset) no arquivo de dados. Isso permite leitura em O(1) sem varredura sequencial. O diretório e os baldes são persistidos em arquivos separados (`.d.db` e `.c.db`).
-
-### 3. Índice Indireto de E-mail — Hashing Extensível (e-mail → ID)
-
-`ArquivoUsuario` adiciona um segundo `HashExtensivel<ParEmailID>` que mapeia o hash do e-mail ao ID do usuário. Isso permite buscar um usuário pelo e-mail sem percorrer o arquivo de dados. O índice é atualizado em toda operação que modifica o e-mail ou exclui o usuário.
-
-### 4. Relacionamento 1:N — Árvore B+
-
-`ArquivoCurso` mantém uma `ArvoreBMais<ParIntInt>` cujos elementos são pares `(usuarioId, cursoId)`. A árvore é usada para:
-- **Inserção**: ao criar um curso, `(usuarioId, cursoId)` é inserido na árvore.
-- **Listagem**: `arvoreBMais.read(new ParIntInt(usuarioId, -1))` percorre todas as folhas retornando todos os pares com aquele `usuarioId` (o valor `-1` em `num2` instrui o `compareTo` a ignorar o segundo campo).
-- **Exclusão**: ao deletar um curso, o par correspondente é removido da árvore.
-
-### 5. Reuso de Espaço em Disco
-
-`Arquivo<T>` mantém uma lista encadeada de registros deletados embutida no próprio arquivo de dados. Cada entrada deletada tem seu payload reaproveitado para armazenar o ponteiro para o próximo slot livre e seu tamanho, formando uma lista ordenada por tamanho. Na criação/atualização, o método `getDeleted(tamanhoNecessário)` encontra o primeiro slot com tamanho suficiente (first-fit), evitando fragmentação. `ArvoreBMais` faz o mesmo com páginas deletadas da árvore.
-
-### 6. Geração de Código Compartilhável (NanoID)
-
-Todo novo `Curso` recebe automaticamente um código de 10 caracteres gerado por `NanoID.gerarCodigo(10)`, que usa `SecureRandom` e o alfabeto `[A-Za-z0-9_-]` (64 caracteres). O código é persistido no bytes do registro e exibido na tela de detalhe do curso.
-
-### 7. Proteção na Exclusão de Conta
-
-Antes de deletar um usuário, `CursoController.temCursosAtivos(usuarioId)` consulta a Árvore B+ para verificar se algum curso ainda está no estado *Aberto* (0) ou *Inscrições encerradas* (1). Se sim, a exclusão é bloqueada com mensagem de erro. Caso contrário, os cursos nos estados *Concluído* (2) e *Cancelado* (3) são deletados em lote antes da exclusão do usuário.
+| `Principal` | Classe `main`. Instancia todos os controllers e views e gerencia o fluxo de navegação. |
 
 ---
 
