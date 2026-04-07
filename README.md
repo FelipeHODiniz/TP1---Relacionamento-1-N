@@ -12,9 +12,196 @@
 
 ## Descrição do Sistema
 
-O sistema, chamado **EntrePares 1.0**, é uma aplicação de gerenciamento de usuários e cursos com persistência em arquivos binários. Ele foi desenvolvido em Java seguindo o padrão arquitetural **MVC (Model-View-Controller)** e implementa estruturas de dados de indexação **Tabela Hash Extensível** e **Árvore B+** para garantir acesso eficiente aos registros armazenados em disco.
+O sistema, chamado **EntrePares 1.0**, é uma aplicação de linha de comando para gerenciamento de usuários e cursos com persistência em arquivos binários. Foi desenvolvido em Java seguindo o padrão arquitetural **MVC (Model-View-Controller)** e implementa as estruturas de dados de indexação **Tabela Hash Extensível** e **Árvore B+** para garantir acesso eficiente aos registros em disco.
+
+### Funcionalidades Principais
+
+- **Cadastro e autenticação de usuários**: o usuário se registra informando nome, e-mail, senha, pergunta e resposta secreta. A senha e a resposta secreta são armazenadas como hashes MD5.
+- **Gerenciamento do perfil**: após o login, o usuário pode alterar seus dados (nome, e-mail, pergunta/resposta secreta) ou deletar a conta.
+- **CRUD de cursos**: cada usuário autenticado pode criar, visualizar, editar, encerrar, concluir ou cancelar seus cursos.
+- **Relacionamento 1:N**: um usuário possui zero ou mais cursos; o vínculo é mantido por uma Árvore B+ de relacionamento.
+- **Código compartilhável**: ao criar um curso, um código único de 10 caracteres (NanoID) é gerado automaticamente.
+- **Estado do curso**: cada curso pode estar em um dos quatro estados — *Aberto* (0), *Inscrições encerradas* (1), *Concluído* (2) ou *Cancelado* (3).
+- **Proteção na exclusão de conta**: a conta só pode ser deletada se o usuário não possuir cursos ativos (estado 0 ou 1). Cursos inativos (estado 2 ou 3) são removidos automaticamente antes da exclusão.
 
 ---
+
+## Fluxo de Navegação
+
+```
+Tela Inicial
+├── (A) Realizar Login
+│     └── Menu Logado
+│           ├── (A) Meus Dados
+│           │     ├── (A) Alterar dados
+│           │     └── (B) Deletar conta
+│           └── (B) Meus Cursos
+│                 ├── (A) Criar novo curso
+│                 └── (N) Detalhe do curso selecionado
+│                       ├── (A) Gerenciar inscritos    [não implementado neste TP]
+│                       ├── (B) Editar curso
+│                       ├── (C) Encerrar inscrições
+│                       ├── (D) Concluir curso
+│                       └── (E) Cancelar curso
+└── (B) Cadastrar novo usuário
+```
+
+---
+
+## Telas do Sistema
+
+### Tela inicial — Login e Cadastro
+
+[print: tela inicial com as opções (A) Realizar Login, (B) Cadastrar novo usuário e (S) Sair]
+
+### Tela de cadastro de usuário
+
+[print: formulário de cadastro solicitando nome, e-mail, senha, pergunta secreta e resposta secreta]
+
+### Tela de login
+
+[print: formulário de login solicitando e-mail e senha]
+
+### Menu principal (pós-login)
+
+[print: menu com as opções (A) Meus Dados, (B) Meus Cursos e (S) Sair]
+
+### Meus Dados
+
+[print: exibição dos dados do usuário (nome, e-mail, pergunta secreta) com as opções (A) Alterar dados e (B) Deletar conta]
+
+### Meus Cursos — lista
+
+[print: lista de cursos do usuário com nome e data, opção (A) para criar novo curso e seleção por número]
+
+### Meus Cursos — criar novo curso
+
+[print: formulário de criação de curso solicitando nome, data de início e descrição]
+
+### Detalhe do curso
+
+[print: exibição completa do curso (nome, data, código compartilhável, estado, descrição) com as opções de gerenciamento (B) Editar, (C) Encerrar inscrições, (D) Concluir, (E) Cancelar]
+
+---
+
+## Classes Criadas
+
+### `model/`
+
+| Classe | Descrição |
+|--------|-----------|
+| `Usuario` | Entidade usuário com campos `id`, `nome`, `email`, `hashSenha`, `PerguntaSecreta`, `RespostaSecreta`. Implementa serialização binária via `toByteArray()` / `fromByteArray()`. |
+| `Curso` | Entidade curso com campos `id`, `nome`, `dataInicioCurso`, `descricao`, `codigoCompartilhavel`, `estado` e `usuarioId` (chave estrangeira). O código compartilhável é gerado automaticamente na construção. |
+| `NanoID` | Utilitário que gera strings alfanuméricas seguras usando `SecureRandom`. |
+
+### `repository/`
+
+| Classe | Descrição |
+|--------|-----------|
+| `Registro` | Interface contrato para entidades persistíveis: `setId`, `getId`, `toByteArray`, `fromByteArray`. |
+| `RegistroHashExtensivel<T>` | Interface contrato para elementos armazenáveis na Hash Extensível. |
+| `RegistroArvoreBMais<T>` | Interface contrato para elementos armazenáveis na Árvore B+. |
+| `Arquivo<T>` | Motor de armazenamento binário genérico. Arquivos com cabeçalho de 12 bytes (último ID + cabeça da lista de espaços livres). Cada registro tem lápide (1 byte) + comprimento (2 bytes) + payload. Mantém um `HashExtensivel<ParIDEndereco>` como índice direto ID → endereço em disco. |
+| `HashExtensivel<T>` | Implementação completa de **Hashing Extensível** persistida em dois arquivos: diretório (`.d.db`) e baldes (`.c.db`). Suporta split de baldes e duplicação de diretório. |
+| `ArvoreBMais<T>` | Implementação completa de **Árvore B+** em disco. Folhas encadeadas para varredura sequencial. Suporta chaves duplicadas distinguidas por um segundo campo (`num2`). |
+| `ParIDEndereco` | Par `(int id, long endereço)` — entrada do índice direto de todos os arquivos. |
+
+### `repository/Usuario/`
+
+| Classe | Descrição |
+|--------|-----------|
+| `ArquivoUsuario` | Estende `Arquivo<Usuario>`. Adiciona índice indireto `HashExtensivel<ParEmailID>` para busca por e-mail. Sobrescreve `create`, `delete` e `update` para manter o índice de e-mail sincronizado. |
+| `ParEmailID` | Par `(String email, int id)` — entrada do índice indireto de e-mail. Tamanho fixo de 44 bytes. |
+
+### `repository/Curso/`
+
+| Classe | Descrição |
+|--------|-----------|
+| `ArquivoCurso` | Estende `Arquivo<Curso>`. Adiciona índice de relacionamento `ArvoreBMais<ParIntInt>` para o vínculo 1:N usuário-curso. Sobrescreve `create` e `delete` para manter a árvore sincronizada. Implementa `listarPorUsuario`, `temCursosAtivos` e `deletarCursosInativos`. |
+| `ParIntInt` | Par `(int num1, int num2)` representando `(usuarioId, cursoId)` — entrada da Árvore B+ de relacionamento. Tamanho fixo de 8 bytes. |
+
+### `controller/`
+
+| Classe | Descrição |
+|--------|-----------|
+| `UsuarioController` | Camada de serviço para usuários. Encapsula o repositório, aplica hashing MD5 na senha e na resposta secreta, e expõe operações de login, cadastro, atualização e exclusão. |
+| `CursoController` | Camada de serviço para cursos. Delega ao repositório e expõe operações CRUD mais `temCursosAtivos` e `excluirCursosInativos`. |
+
+### `view/`
+
+| Classe | Descrição |
+|--------|-----------|
+| `LoginView` | Tela inicial: menu de login e cadastro. Contém inner class `DadosNovoUsuario` e `CredenciaisLogin`. |
+| `InicioView` | Menu pós-login: Meus Dados / Meus Cursos / Sair. |
+| `DadosView` | Tela de perfil do usuário: exibe dados e permite atualização ou exclusão. Contém inner class `DadosAtualizados`. |
+| `CursosView` | Lista de cursos do usuário; formulário de criação. Contém inner class `DadosNovoCurso`. |
+| `CursoDetalheView` | Exibe detalhes de um curso e opções de gerenciamento. Contém inner class `DadosAtualizados`. |
+
+### Ponto de entrada
+
+| Classe | Descrição |
+|--------|-----------|
+| `Principal` | Classe `main`. Instancia todos os controllers e views e gerencia o fluxo de navegação completo por máquina de estados com laços aninhados. |
+
+---
+
+## Operações Especiais Implementadas
+
+### 1. Hashing de Senha e Resposta Secreta (MD5)
+
+A senha e a resposta secreta **jamais são armazenadas em texto plano**. O método `UsuarioController.toMd5(String)` computa o hash MD5 com encoding UTF-8 e retorna uma string hexadecimal de 32 caracteres. O hash é aplicado:
+- **No cadastro**: antes de persistir o `Usuario`, `hashSenha` e `RespostaSecreta` são substituídos pelos seus hashes.
+- **No login**: a senha digitada é hasheada e comparada ao valor armazenado.
+- **Na atualização**: a resposta secreta só é re-hasheada se o usuário informar um novo valor não vazio; caso contrário o hash atual é preservado.
+
+### 2. Índice Direto — Hashing Extensível (ID → Endereço)
+
+A classe base `Arquivo<T>` mantém um `HashExtensivel<ParIDEndereco>` que mapeia cada ID de registro ao seu endereço (offset) no arquivo de dados. Isso permite leitura em O(1) sem varredura sequencial. O diretório e os baldes são persistidos em arquivos separados (`.d.db` e `.c.db`).
+
+### 3. Índice Indireto de E-mail — Hashing Extensível (e-mail → ID)
+
+`ArquivoUsuario` adiciona um segundo `HashExtensivel<ParEmailID>` que mapeia o hash do e-mail ao ID do usuário. Isso permite buscar um usuário pelo e-mail sem percorrer o arquivo de dados. O índice é atualizado em toda operação que modifica o e-mail ou exclui o usuário.
+
+### 4. Relacionamento 1:N — Árvore B+
+
+`ArquivoCurso` mantém uma `ArvoreBMais<ParIntInt>` cujos elementos são pares `(usuarioId, cursoId)`. A árvore é usada para:
+- **Inserção**: ao criar um curso, `(usuarioId, cursoId)` é inserido na árvore.
+- **Listagem**: `arvoreBMais.read(new ParIntInt(usuarioId, -1))` percorre todas as folhas retornando todos os pares com aquele `usuarioId` (o valor `-1` em `num2` instrui o `compareTo` a ignorar o segundo campo).
+- **Exclusão**: ao deletar um curso, o par correspondente é removido da árvore.
+
+### 5. Reuso de Espaço em Disco
+
+`Arquivo<T>` mantém uma lista encadeada de registros deletados embutida no próprio arquivo de dados. Cada entrada deletada tem seu payload reaproveitado para armazenar o ponteiro para o próximo slot livre e seu tamanho, formando uma lista ordenada por tamanho. Na criação/atualização, o método `getDeleted(tamanhoNecessário)` encontra o primeiro slot com tamanho suficiente (first-fit), evitando fragmentação. `ArvoreBMais` faz o mesmo com páginas deletadas da árvore.
+
+### 6. Geração de Código Compartilhável (NanoID)
+
+Todo novo `Curso` recebe automaticamente um código de 10 caracteres gerado por `NanoID.gerarCodigo(10)`, que usa `SecureRandom` e o alfabeto `[A-Za-z0-9_-]` (64 caracteres). O código é persistido no bytes do registro e exibido na tela de detalhe do curso.
+
+### 7. Proteção na Exclusão de Conta
+
+Antes de deletar um usuário, `CursoController.temCursosAtivos(usuarioId)` consulta a Árvore B+ para verificar se algum curso ainda está no estado *Aberto* (0) ou *Inscrições encerradas* (1). Se sim, a exclusão é bloqueada com mensagem de erro. Caso contrário, os cursos nos estados *Concluído* (2) e *Cancelado* (3) são deletados em lote antes da exclusão do usuário.
+
+---
+
+## Estrutura de Arquivos de Dados
+
+```
+dados/
+├── usuarios/
+│   ├── usuarios.db          # Registros binários de usuários
+│   ├── usuarios.d.db        # Diretório do HashExtensivel (índice direto ID→addr)
+│   ├── usuarios.c.db        # Baldes do HashExtensivel (índice direto)
+│   ├── indiceEMAIL.d.db     # Diretório do HashExtensivel (índice indireto email→ID)
+│   └── indiceEMAIL.c.db     # Baldes do HashExtensivel (índice indireto)
+└── cursos/
+    ├── cursos.db             # Registros binários de cursos
+    ├── cursos.d.db           # Diretório do HashExtensivel (índice direto ID→addr)
+    ├── cursos.c.db           # Baldes do HashExtensivel (índice direto)
+    └── indiceUsuarioCurso.db # Árvore B+ do relacionamento 1:N (usuarioId, cursoId)
+```
+
+---
+
 ## Checklist
 
 **Há um CRUD de usuários (que estende a classe `ArquivoIndexado`, acrescentando Tabelas Hash Extensíveis e Árvores B+ como índices diretos e indiretos conforme necessidade) que funciona corretamente?**
