@@ -229,7 +229,9 @@ public class Principal {
                         usuario.nome = novos.nome;
                         usuario.email = novos.email;
                         usuario.PerguntaSecreta = novos.pergunta;
-                        usuario.RespostaSecreta = novos.resposta;
+                        if (novos.resposta != null && !novos.resposta.isEmpty()) {
+                            usuario.RespostaSecreta = USUARIO_CONTROLLER.toMd5(novos.resposta);
+                        }
                         email = novos.email;
                     } else {
                         DADOS_VIEW.mostrarMensagem("Falha ao atualizar dados.");
