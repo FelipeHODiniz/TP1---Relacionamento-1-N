@@ -19,7 +19,6 @@ public class DadosView {
 		System.out.println("\nNome........: " + usuario.getNome());
 		System.out.println("Email.......: " + usuario.getEmail());
 		System.out.println("Pergunta....: " + usuario.getPerguntaSecreta());
-		System.out.println("Resposta....: " + usuario.getRespostaSecreta());
 
 		System.out.println("\n(A) Alterar dados");
 		System.out.println("(B) Deletar conta");
@@ -54,11 +53,8 @@ public class DadosView {
 			pergunta = atual.getPerguntaSecreta();
 		}
 
-		System.out.print("Nova resposta secreta (" + atual.getRespostaSecreta() + "): ");
+		System.out.print("Nova resposta secreta (deixe em branco para manter a atual): ");
 		String resposta = console.nextLine();
-		if (resposta.isEmpty()) {
-			resposta = atual.getRespostaSecreta();
-		}
 
 		return new DadosAtualizados(nome, email, pergunta, resposta);
 	}
