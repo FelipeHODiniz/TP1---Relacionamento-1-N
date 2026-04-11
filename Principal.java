@@ -64,6 +64,9 @@ public class Principal {
                 case "B":
                     cadastrarNovoUsuario();
                     break;
+                case "C":
+                    redefinirSenha();
+                    break;
                 case "S":
                     LOGIN_VIEW.mostrarMensagem("Encerrando...");
                     executando = false;
