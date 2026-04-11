@@ -79,6 +79,21 @@ public class UsuarioController {
         }
     }
 
+    public boolean redefinirSenha(String email, String novaSenha) {
+        try {
+            Usuario usuario = repository.buscarPorEmail(email);
+            if (usuario == null) {
+                return false;
+            }
+
+            usuario.setHashSenha(toMd5(novaSenha));
+            return repository.update(usuario);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean deletarPorEmail(String email) {
         try {
             return repository.delete(email);

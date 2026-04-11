@@ -300,6 +300,41 @@ public class Principal {
         LOGIN_VIEW.mostrarMensagem("Usuario cadastrado com sucesso. ID: " + id);
     }
 
+    private static void redefinirSenha() throws Exception {
+        String email = LOGIN_VIEW.lerEmail();
+
+        if (!emailValido(email)) {
+            LOGIN_VIEW.mostrarMensagem("Email invalido.");
+            return;
+        }
+
+        Usuario usuario = USUARIO_CONTROLLER.buscarPorEmail(email);
+        if (usuario == null) {
+            LOGIN_VIEW.mostrarMensagem("Usuario nao encontrado.");
+            return;
+        }
+
+        String resposta = LOGIN_VIEW.lerRespostaSecreta(usuario.PerguntaSecreta);
+        String hashResposta = USUARIO_CONTROLLER.toMd5(resposta);
+
+        if (hashResposta.equals(usuario.getRespostaSecreta())) {
+            String novaSenha = LOGIN_VIEW.lerNovaSenha();
+            if (novaSenha.isEmpty()) {
+                LOGIN_VIEW.mostrarMensagem("Senha nao pode ser vazia.");
+                return;
+            }
+
+            boolean ok = USUARIO_CONTROLLER.redefinirSenha(email, novaSenha);
+            if (ok) {
+                LOGIN_VIEW.mostrarMensagem("Senha redefinida com sucesso.");
+            } else {
+                LOGIN_VIEW.mostrarMensagem("Falha ao redefinir a senha.");
+            }
+        } else {
+            LOGIN_VIEW.mostrarMensagem("Resposta incorreta.");
+        }
+    }
+
     private static boolean emailValido(String email) {
         return email != null && email.contains("@")
             && email.indexOf('@') > 0 && email.indexOf('@') < email.length() - 1;
