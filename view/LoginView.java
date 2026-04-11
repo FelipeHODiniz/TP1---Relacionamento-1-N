@@ -15,6 +15,7 @@ public class LoginView {
         System.out.println("--------------");
         System.out.println("\n(A) Login");
         System.out.println("(B) Novo usuario");
+        System.out.println("(C) Esqueci minha senha");
         System.out.println("\n(S) Sair");
         System.out.print("\nOpcao: ");
 
@@ -53,6 +54,23 @@ public class LoginView {
         String resposta = console.nextLine();
 
         return new DadosNovoUsuario(nome, email, senha, pergunta, resposta);
+    }
+
+    public String lerEmail() {
+        System.out.println("\nRecuperar Senha");
+        System.out.print("Email: ");
+        return console.nextLine().trim();
+    }
+
+    public String lerRespostaSecreta(String pergunta) {
+        System.out.println("\nPergunta Secreta: " + pergunta);
+        System.out.print("Sua resposta: ");
+        return console.nextLine();
+    }
+
+    public String lerNovaSenha() {
+        System.out.print("Nova Senha: ");
+        return console.nextLine();
     }
 
     public void mostrarMensagem(String mensagem) {

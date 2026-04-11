@@ -64,6 +64,9 @@ public class Principal {
                 case "B":
                     cadastrarNovoUsuario();
                     break;
+                case "C":
+                    redefinirSenha();
+                    break;
                 case "S":
                     LOGIN_VIEW.mostrarMensagem("Encerrando...");
                     executando = false;
@@ -223,19 +226,27 @@ public class Principal {
             switch (opcao) {
                 case "A":
                     DadosView.DadosAtualizados novos = DADOS_VIEW.lerDadosAtualizados(usuario);
-                    boolean ok = USUARIO_CONTROLLER.atualizarDados(email, novos.nome, novos.email, novos.pergunta, novos.resposta);
-                    if (ok) {
-                        DADOS_VIEW.mostrarMensagem("Dados atualizados com sucesso.");
-                        usuario.nome = novos.nome;
-                        usuario.email = novos.email;
-                        usuario.PerguntaSecreta = novos.pergunta;
-                        if (novos.resposta != null && !novos.resposta.isEmpty()) {
-                            usuario.RespostaSecreta = USUARIO_CONTROLLER.toMd5(novos.resposta);
-                        }
-                        email = novos.email;
+                    boolean perguntaMudou = !novos.pergunta.equals(usuario.PerguntaSecreta);
+                    boolean temNovaResposta = novos.resposta != null && !novos.resposta.isEmpty();
+
+                    if (perguntaMudou && !temNovaResposta) {
+                        DADOS_VIEW.mostrarMensagem("Erro: Ao alterar a pergunta, voce deve obrigatoriamente fornecer uma nova resposta.");
                     } else {
-                        DADOS_VIEW.mostrarMensagem("Falha ao atualizar dados.");
+                        boolean ok = USUARIO_CONTROLLER.atualizarDados(email, novos.nome, novos.email, novos.pergunta, novos.resposta);
+                        if (ok) {
+                            DADOS_VIEW.mostrarMensagem("Dados atualizados com sucesso.");
+                            usuario.nome = novos.nome;
+                            usuario.email = novos.email;
+                            usuario.PerguntaSecreta = novos.pergunta;
+                            if (temNovaResposta) {
+                                usuario.RespostaSecreta = USUARIO_CONTROLLER.toMd5(novos.resposta.toLowerCase());
+                            }
+                            email = novos.email;
+                        } else {
+                            DADOS_VIEW.mostrarMensagem("Falha ao atualizar dados.");
+                        }
                     }
+
                     break;
                 case "B":
                     if (DADOS_VIEW.confirmarExclusao()) {
@@ -283,6 +294,11 @@ public class Principal {
             return;
         }
 
+        if (dados.pergunta.trim().isEmpty() || dados.resposta.trim().isEmpty()) {
+            LOGIN_VIEW.mostrarMensagem("Pergunta e resposta secreta sao obrigatorias.");
+            return;
+        }
+
         Usuario novoUsuario = new Usuario(
             dados.nome,
             dados.email,
@@ -298,6 +314,41 @@ public class Principal {
         }
 
         LOGIN_VIEW.mostrarMensagem("Usuario cadastrado com sucesso. ID: " + id);
+    }
+
+    private static void redefinirSenha() throws Exception {
+        String email = LOGIN_VIEW.lerEmail();
+
+        if (!emailValido(email)) {
+            LOGIN_VIEW.mostrarMensagem("Email invalido.");
+            return;
+        }
+
+        Usuario usuario = USUARIO_CONTROLLER.buscarPorEmail(email);
+        if (usuario == null) {
+            LOGIN_VIEW.mostrarMensagem("Usuario nao encontrado.");
+            return;
+        }
+
+        String resposta = LOGIN_VIEW.lerRespostaSecreta(usuario.PerguntaSecreta);
+        String hashResposta = USUARIO_CONTROLLER.toMd5(resposta.toLowerCase().trim());
+
+        if (hashResposta.equals(usuario.getRespostaSecreta())) {
+            String novaSenha = LOGIN_VIEW.lerNovaSenha();
+            if (novaSenha.isEmpty()) {
+                LOGIN_VIEW.mostrarMensagem("Senha nao pode ser vazia.");
+                return;
+            }
+
+            boolean ok = USUARIO_CONTROLLER.redefinirSenha(email, novaSenha);
+            if (ok) {
+                LOGIN_VIEW.mostrarMensagem("Senha redefinida com sucesso.");
+            } else {
+                LOGIN_VIEW.mostrarMensagem("Falha ao redefinir a senha.");
+            }
+        } else {
+            LOGIN_VIEW.mostrarMensagem("Resposta incorreta.");
+        }
     }
 
     private static boolean emailValido(String email) {
