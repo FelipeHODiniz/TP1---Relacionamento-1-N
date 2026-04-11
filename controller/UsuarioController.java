@@ -40,7 +40,7 @@ public class UsuarioController {
         int id = -1;
         try{
             u.setHashSenha(toMd5(u.getHashSenha()));
-            u.RespostaSecreta = toMd5(u.RespostaSecreta);
+            u.RespostaSecreta = toMd5(u.getRespostaSecreta().toLowerCase().trim());
             id = this.repository.create(u);
         }
         catch(Exception e){
@@ -68,8 +68,8 @@ public class UsuarioController {
             usuario.email = novoEmail;
             // mantem o hash da senha
             usuario.PerguntaSecreta = novaPergunta;
-            if (novaResposta != null && !novaResposta.isEmpty()) {
-                usuario.RespostaSecreta = toMd5(novaResposta);
+            if (novaResposta != null && !novaResposta.trim().isEmpty()) {
+                usuario.RespostaSecreta = toMd5(novaResposta.toLowerCase().trim());
             }
 
             return repository.update(usuario);

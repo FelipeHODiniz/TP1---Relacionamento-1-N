@@ -48,13 +48,13 @@ public class DadosView {
 		}
 
 		System.out.print("Nova pergunta secreta (" + atual.getPerguntaSecreta() + "): ");
-		String pergunta = console.nextLine();
+		String pergunta = console.nextLine().trim();
 		if (pergunta.isEmpty()) {
 			pergunta = atual.getPerguntaSecreta();
 		}
 
-		System.out.print("Nova resposta secreta (deixe em branco para manter a atual): ");
-		String resposta = console.nextLine();
+		System.out.print("Nova resposta secreta: ");
+		String resposta = console.nextLine().trim();
 
 		return new DadosAtualizados(nome, email, pergunta, resposta);
 	}
