@@ -104,9 +104,11 @@ public class Principal {
             opcao = INICIO_VIEW.lerOpcaoMenuInicio();
             switch (opcao) {
                 case "A":
-                    if (!menuMeusDados(email)) {
+                    String emailAtualizado = menuMeusDados(email);
+                    if (emailAtualizado == null) {
                         return false;
                     }
+                    email = emailAtualizado;
                     break;
                 case "B":
                     if (!menuMeusCursos(email)) {
@@ -213,11 +215,11 @@ public class Principal {
         }
     }
 
-    private static boolean menuMeusDados(String email) throws Exception {
+    private static String menuMeusDados(String email) throws Exception {
         Usuario usuario = USUARIO_CONTROLLER.buscarPorEmail(email);
         if (usuario == null) {
             DADOS_VIEW.mostrarMensagem("Usuario nao encontrado.");
-            return true;
+            return email;
         }
 
         boolean emDados = true;
@@ -229,19 +231,23 @@ public class Principal {
                     boolean perguntaMudou = !novos.pergunta.equals(usuario.PerguntaSecreta);
                     boolean temNovaResposta = novos.resposta != null && !novos.resposta.isEmpty();
 
-                    if (perguntaMudou && !temNovaResposta) {
+                    if (novos.nome.length() < 4) {
+                        DADOS_VIEW.mostrarMensagem("Erro: O nome deve ter no minimo 4 caracteres.");
+                    } else if (!emailValido(novos.email)) {
+                        DADOS_VIEW.mostrarMensagem("Erro: Email invalido.");
+                    } else if (perguntaMudou && !temNovaResposta) {
                         DADOS_VIEW.mostrarMensagem("Erro: Ao alterar a pergunta, voce deve obrigatoriamente fornecer uma nova resposta.");
                     } else {
                         boolean ok = USUARIO_CONTROLLER.atualizarDados(email, novos.nome, novos.email, novos.pergunta, novos.resposta);
                         if (ok) {
                             DADOS_VIEW.mostrarMensagem("Dados atualizados com sucesso.");
+                            email = novos.email;
                             usuario.nome = novos.nome;
                             usuario.email = novos.email;
                             usuario.PerguntaSecreta = novos.pergunta;
                             if (temNovaResposta) {
                                 usuario.RespostaSecreta = USUARIO_CONTROLLER.toMd5(novos.resposta.toLowerCase());
                             }
-                            email = novos.email;
                         } else {
                             DADOS_VIEW.mostrarMensagem("Falha ao atualizar dados.");
                         }
@@ -257,7 +263,7 @@ public class Principal {
                             boolean apagou = USUARIO_CONTROLLER.deletarPorEmail(email);
                             if (apagou) {
                                 DADOS_VIEW.mostrarMensagem("Conta deletada com sucesso.");
-                                return false;
+                                return null;
                             } else {
                                 DADOS_VIEW.mostrarMensagem("Falha ao deletar conta.");
                             }
@@ -273,7 +279,7 @@ public class Principal {
             }
         }
 
-        return true;
+        return email;
     }
 
     private static void cadastrarNovoUsuario() throws Exception {
