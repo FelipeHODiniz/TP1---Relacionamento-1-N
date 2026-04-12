@@ -50,9 +50,10 @@ Tela Inicial
 
 ## Telas do Sistema
 
-### Tela inicial — Login e Cadastro
+### Tela inicial — Login, Cadastro e Recuperação de senha
 
-<img width="1317" height="410" alt="{E9F10A14-66ED-49C5-B3DA-2097859236AA}" src="https://github.com/user-attachments/assets/526883c3-b0e7-4345-862d-50af4f52b4a1" />
+<img width="430" height="322" alt="{06A390BE-ACEC-4D4D-BFFE-F45D92378C68}" src="https://github.com/user-attachments/assets/ad49f99b-de8e-464b-b2fa-018acaaa3c71" />
+
 
 
 ### Tela de cadastro de usuário
@@ -64,6 +65,9 @@ Tela Inicial
 
 <img width="1112" height="534" alt="{5F6EE82F-F9BD-4ACF-A378-F5CA6B6B43DB}" src="https://github.com/user-attachments/assets/f7514727-fce4-4b36-856b-d429a4ae29b9" />
 
+### Tela redefinir senha
+
+<img width="784" height="644" alt="{FCCFF724-9CB6-4874-AF6E-1F2793F12170}" src="https://github.com/user-attachments/assets/52adf48f-8dd9-44bb-89fd-1a57b7d97656" />
 
 ### Menu principal (pós-login)
 
